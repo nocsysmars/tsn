@@ -204,7 +204,7 @@ void save_bridges(struct shash *bridges, sr_session_ctx_t *session)
         log_error("Delete bridges from sysrepo failed: %s", sr_strerror(rc));
     }
 
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         log_error("Delete bridge apply failed: %s", sr_strerror(rc));
         sr_discard_changes(session);
@@ -281,7 +281,7 @@ void save_bridges(struct shash *bridges, sr_session_ctx_t *session)
             }
         }
 
-        rc = sr_apply_changes(session, 0, 0);
+        rc = sr_apply_changes(session, 0);
         if (rc != SR_ERR_OK) {
             log_error("Set bridge's address and type apply failed: %s", sr_strerror(rc));
             sr_discard_changes(session);

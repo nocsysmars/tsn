@@ -558,6 +558,9 @@ void lldp_port_provider(sr_session_ctx_t *session, struct lyd_node **parent)
     xmlNodePtr current;
     const char *format = "/ieee802-dot1ab-lldp:lldp/port[name='%s'][dest-mac-address='%s']/remote-systems-data[time-mark='%" PRIu64 "'][remote-index='%d']/%s";
     bool start = true;
+    const struct ly_ctx *ly_ctx;
+
+    ly_ctx = sr_acquire_context(sr_session_get_connection(session));
 
     fp = popen("lldpcli show neighbors -f xml" ,"r");
     if (fp == NULL) {
@@ -606,11 +609,12 @@ void lldp_port_provider(sr_session_ctx_t *session, struct lyd_node **parent)
             ds_clear(&path);
             ds_put_format(&path, format, lldp->name, lldp->port->id, lldp->age, index, "system-name");
             if (start) {
-                *parent = lyd_new_path(NULL, sr_get_context(sr_session_get_connection(session)),
-                                       ds_cstr(&path), lldp->chassis->name, 0, 0);
+//                *parent = lyd_new_path(NULL, sr_get_context(sr_session_get_connection(session)),
+//                                       ds_cstr(&path), lldp->chassis->name, 0, 0);
+		lyd_new_path(NULL, ly_ctx, ds_cstr(&path), lldp->chassis->name, 0, parent);
                 start = false;
             } else {
-                lyd_new_path(*parent, NULL, ds_cstr(&path), lldp->chassis->name, 0, 0);
+                lyd_new_path(*parent, NULL, ds_cstr(&path), lldp->chassis->name, 0, NULL);
             }
 
             add_new_string_path(format, lldp->name, lldp->port->id, lldp->age, index,
@@ -639,6 +643,8 @@ void lldp_port_provider(sr_session_ctx_t *session, struct lyd_node **parent)
     }
 
 end:
+    sr_release_context(sr_session_get_connection(session));
+
     if (doc) {
         xmlFreeDoc(doc);
     }

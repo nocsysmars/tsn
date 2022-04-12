@@ -29,7 +29,7 @@ void clear_sysrepo(sr_session_ctx_t *session)
         fprintf(stderr, "Delete interfaces from sysrepo failed: %s\n", sr_strerror(rc));
     }
 
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         fprintf(stderr, "Apply delete interfaces failed: %s\n", sr_strerror(rc));
     }

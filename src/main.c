@@ -42,14 +42,14 @@ static int data_provider(sr_session_ctx_t *session)
     sr_subscription_ctx_t *lldp_subscription = NULL;
     int rc = SR_ERR_OK;
 
-    rc = sr_oper_get_items_subscribe(session, "ietf-interfaces", "/ietf-interfaces:interfaces/interface/statistics",
-                                     provider_cb, NULL, SR_SUBSCR_DEFAULT, &statistics_subscription);
+    rc = sr_oper_get_subscribe(session, "ietf-interfaces", "/ietf-interfaces:interfaces/interface/statistics",
+                               provider_cb, NULL, SR_SUBSCR_DEFAULT, &statistics_subscription);
 
-    rc = sr_oper_get_items_subscribe(session, "ietf-interfaces", "/ietf-interfaces:interfaces/interface/oper-status",
-                                     provider_cb, NULL, SR_SUBSCR_DEFAULT, &oper_status_subscription);
+    rc = sr_oper_get_subscribe(session, "ietf-interfaces", "/ietf-interfaces:interfaces/interface/oper-status",
+                               provider_cb, NULL, SR_SUBSCR_DEFAULT, &oper_status_subscription);
 
-    rc = sr_oper_get_items_subscribe(session, "ieee802-dot1ab-lldp", "/ieee802-dot1ab-lldp:lldp/port",
-                                     provider_cb, NULL, SR_SUBSCR_DEFAULT, &lldp_subscription);
+    rc = sr_oper_get_subscribe(session, "ieee802-dot1ab-lldp", "/ieee802-dot1ab-lldp:lldp/port",
+                               provider_cb, NULL, SR_SUBSCR_DEFAULT, &lldp_subscription);
 
     while (!exit_application) {
         sleep(1);
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
         log_error("Delete lldp from sysrepo failed: %s", sr_strerror(rc));
     }
 
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         log_error("Delete lldp from sysrepo apply failed: %s", sr_strerror(rc));
     }
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
     if (rc != SR_ERR_OK) {
         log_error("Delete interface from sysrepo failed: %s", sr_strerror(rc));
     }
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         log_error("Delete interface from sysrepo apply failed: %s", sr_strerror(rc));
     }
