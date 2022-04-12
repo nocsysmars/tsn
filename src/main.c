@@ -16,9 +16,9 @@
 volatile int exit_application = 0;
 struct shash interfaces;
 
-static int provider_cb(sr_session_ctx_t *session, const char *module_name, const char *xpath,
-                                 const char *request_xpath, uint32_t requrest_id, struct lyd_node **parent,
-                                 void *private_ctx)
+static int provider_cb(
+    sr_session_ctx_t *session, uint32_t sub_id, const char *module_name, const char *xpath,
+    const char *request_xpath, uint32_t request_id, struct lyd_node **parent, void *private_data)
 {
     log_info("Get request path: %s\n", xpath);
     if (strcmp(module_name, "ietf-interfaces") == 0) {

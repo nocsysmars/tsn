@@ -128,7 +128,7 @@ static void get_interface_speed(char *interface_name, unsigned int *speed)
     }
 
     strncpy(ifr.ifr_name, interface_name, sizeof(ifr.ifr_name));
-    ifr.ifr_data = &edata;
+    ifr.ifr_data = (__caddr_t) &edata;
 
     edata.cmd = ETHTOOL_GSET;
 
@@ -477,7 +477,7 @@ static inline void add_new_path(
     char value_str[24] = {0};
 
     ds_put_format(&path, format, interface_name, node_name);
-    sprintf(value_str, "%u", rtnl_link_get_stat(link, id));
+    sprintf(value_str, "%lu", rtnl_link_get_stat(link, id));
     lyd_new_path(parent, NULL, ds_cstr(&path), value_str, 0, 0);
 
     ds_destroy(&path);

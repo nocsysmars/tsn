@@ -25,7 +25,7 @@ void get_bridge_vlan(const char *br_name, br_vlan_t *vlan)
     const char *err = NULL;
     cJSON *root = NULL;
     const cJSON *bridge = NULL, *vlan_node = NULL, *id_node = NULL, *flags_node = NULL;
-    const cJSON *flag_node = NULL;
+    cJSON *flag_node = NULL;
     char *flag;
     int len = 0, id = 0;
 
