@@ -11,6 +11,7 @@
 #include "interface.h"
 #include "bridge.h"
 #include "hardware.h"
+#include "dbus_util.h"
 
 volatile int exit_application = 0;
 struct shash interfaces;
@@ -137,6 +138,9 @@ int main(int argc, char *argv[])
 
     save_hardware_chassis(session);
     update_ips(&interfaces, session);
+
+
+    dbus_query("test");
 
     struct shash bridges;
     struct shash_node *br_node = NULL;
