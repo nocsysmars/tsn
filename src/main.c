@@ -11,13 +11,14 @@
 #include "interface.h"
 #include "bridge.h"
 #include "hardware.h"
+#include "dbus_util.h"
 
 volatile int exit_application = 0;
 struct shash interfaces;
 
-static int provider_cb(sr_session_ctx_t *session, const char *module_name, const char *xpath,
-                                 const char *request_xpath, uint32_t requrest_id, struct lyd_node **parent,
-                                 void *private_ctx)
+static int provider_cb(
+    sr_session_ctx_t *session, uint32_t sub_id, const char *module_name, const char *xpath,
+    const char *request_xpath, uint32_t request_id, struct lyd_node **parent, void *private_data)
 {
     log_info("Get request path: %s\n", xpath);
     if (strcmp(module_name, "ietf-interfaces") == 0) {
@@ -42,14 +43,14 @@ static int data_provider(sr_session_ctx_t *session)
     sr_subscription_ctx_t *lldp_subscription = NULL;
     int rc = SR_ERR_OK;
 
-    rc = sr_oper_get_items_subscribe(session, "ietf-interfaces", "/ietf-interfaces:interfaces/interface/statistics",
-                                     provider_cb, NULL, SR_SUBSCR_DEFAULT, &statistics_subscription);
+    rc = sr_oper_get_subscribe(session, "ietf-interfaces", "/ietf-interfaces:interfaces/interface/statistics",
+                               provider_cb, NULL, SR_SUBSCR_DEFAULT, &statistics_subscription);
 
-    rc = sr_oper_get_items_subscribe(session, "ietf-interfaces", "/ietf-interfaces:interfaces/interface/oper-status",
-                                     provider_cb, NULL, SR_SUBSCR_DEFAULT, &oper_status_subscription);
+    rc = sr_oper_get_subscribe(session, "ietf-interfaces", "/ietf-interfaces:interfaces/interface/oper-status",
+                               provider_cb, NULL, SR_SUBSCR_DEFAULT, &oper_status_subscription);
 
-    rc = sr_oper_get_items_subscribe(session, "ieee802-dot1ab-lldp", "/ieee802-dot1ab-lldp:lldp/port",
-                                     provider_cb, NULL, SR_SUBSCR_DEFAULT, &lldp_subscription);
+    rc = sr_oper_get_subscribe(session, "ieee802-dot1ab-lldp", "/ieee802-dot1ab-lldp:lldp/port",
+                               provider_cb, NULL, SR_SUBSCR_DEFAULT, &lldp_subscription);
 
     while (!exit_application) {
         sleep(1);
@@ -105,7 +106,7 @@ int main(int argc, char *argv[])
         log_error("Delete lldp from sysrepo failed: %s", sr_strerror(rc));
     }
 
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         log_error("Delete lldp from sysrepo apply failed: %s", sr_strerror(rc));
     }
@@ -115,7 +116,7 @@ int main(int argc, char *argv[])
     if (rc != SR_ERR_OK) {
         log_error("Delete interface from sysrepo failed: %s", sr_strerror(rc));
     }
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         log_error("Delete interface from sysrepo apply failed: %s", sr_strerror(rc));
     }
@@ -137,6 +138,9 @@ int main(int argc, char *argv[])
 
     save_hardware_chassis(session);
     update_ips(&interfaces, session);
+
+
+    dbus_query("test");
 
     struct shash bridges;
     struct shash_node *br_node = NULL;

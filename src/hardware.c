@@ -236,7 +236,7 @@ void save_hardware_chassis(sr_session_ctx_t *session)
         goto cleanup;
     }
 
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         log_error("Apply failed when set chassis's class: %s", sr_strerror(rc));
         sr_discard_changes(session);
@@ -285,7 +285,7 @@ void save_hardware_chassis(sr_session_ctx_t *session)
                   sr_strerror(rc));
     }
 
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         log_error("Apply failed when save chassis' information into operational: %s",
                   sr_strerror(rc));

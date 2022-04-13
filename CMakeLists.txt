@@ -21,6 +21,10 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/CMakeModules/")
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/inc)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
+find_package(DBus REQUIRED)
+include_directories(${DBUS_INCLUDE_DIRS})
+LINK_DIRECTORIES(${DBUS_LIBRARIES})
+
 find_package(LibXml2 REQUIRED)
 include_directories(${LIBXML2_INCLUDE_DIR})
 LINK_DIRECTORIES(${LIBXML2_LIBRARIES})
@@ -56,6 +60,7 @@ SET(SRC_LIST
         src/hardware.c
         src/bridge.c
         src/repo.c
+	src/dbus_util.c
         src/main.c)
 
 ADD_EXECUTABLE(${PROJECT_NAME} ${SRC_LIST})
@@ -64,3 +69,4 @@ target_link_libraries(${PROJECT_NAME} ${SYSREPO_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${LibNL_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${LIBYANG_LIBRARIES})
 target_link_libraries(${PROJECT_NAME} ${CJSON_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${DBUS_LIBRARIES})

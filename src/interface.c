@@ -128,7 +128,7 @@ static void get_interface_speed(char *interface_name, unsigned int *speed)
     }
 
     strncpy(ifr.ifr_name, interface_name, sizeof(ifr.ifr_name));
-    ifr.ifr_data = &edata;
+    ifr.ifr_data = (__caddr_t) &edata;
 
     edata.cmd = ETHTOOL_GSET;
 
@@ -374,7 +374,7 @@ void save_ips(struct shash *ips, sr_session_ctx_t *session)
             }
 
             /* commit the changes */
-            rc = sr_apply_changes(session, 0, 0);
+            rc = sr_apply_changes(session, 0);
             if (SR_ERR_OK != rc) {
                 log_error("Set prefix-length apply failed", sr_strerror(rc));
             }
@@ -401,7 +401,7 @@ void save_interface_running(struct interface *intf, sr_session_ctx_t *session)
                   sr_strerror(rc));
     }
 
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         log_error("Set interface's type, apply failed: %s", sr_strerror(rc));
         sr_discard_changes(session);
@@ -460,7 +460,7 @@ void save_interface_operational(struct interface *interface,
         log_error("Set %s=%s failed: %s", ds_cstr(&path), interface->speed, sr_strerror(rc));
     }
 
-    rc = sr_apply_changes(session, 0, 0);
+    rc = sr_apply_changes(session, 0);
     if (rc != SR_ERR_OK) {
         log_error("Set interface's speed apply failed: %s", sr_strerror(rc));
         sr_discard_changes(session);
@@ -477,7 +477,7 @@ static inline void add_new_path(
     char value_str[24] = {0};
 
     ds_put_format(&path, format, interface_name, node_name);
-    sprintf(value_str, "%u", rtnl_link_get_stat(link, id));
+    sprintf(value_str, "%lu", rtnl_link_get_stat(link, id));
     lyd_new_path(parent, NULL, ds_cstr(&path), value_str, 0, 0);
 
     ds_destroy(&path);
@@ -495,6 +495,9 @@ void interface_statistics_provider(sr_session_ctx_t *session, struct lyd_node **
     const char *format = "/ietf-interfaces:interfaces/interface[name='%s']/statistics/%s";
     char *current = NULL;
     bool start = true;
+    const struct ly_ctx *ly_ctx;
+
+    ly_ctx = sr_acquire_context(sr_session_get_connection(session));
 
     sk = nl_socket_alloc();
     if (sk == NULL) {
@@ -523,11 +526,12 @@ void interface_statistics_provider(sr_session_ctx_t *session, struct lyd_node **
         current = get_iso8601_time();
         if (link != NULL) {
             if (start) {
-                *parent = lyd_new_path(NULL, sr_get_context(sr_session_get_connection(session)),
-                                       ds_cstr(&path), current, 0, 0);
+//                *parent = lyd_new_path(NULL, sr_get_context(sr_session_get_connection(session)),
+//                                       ds_cstr(&path), current, 0, 0);
+                lyd_new_path(NULL, ly_ctx, ds_cstr(&path), current, 0, parent);
                 start = false;
             } else {
-                lyd_new_path(*parent, NULL, ds_cstr(&path), current, 0, 0);
+                lyd_new_path(*parent, NULL, ds_cstr(&path), current, 0, NULL);
             }
             free(current);
 
@@ -547,6 +551,8 @@ void interface_statistics_provider(sr_session_ctx_t *session, struct lyd_node **
     ds_destroy(&path);
 
 cleanup:
+    sr_release_context(sr_session_get_connection(session));
+
     if (cache != NULL) {
         nl_cache_free(cache);
     }
@@ -568,6 +574,9 @@ void interface_oper_status_provider(sr_session_ctx_t *session, struct lyd_node *
     int status;
     struct ds path = DS_EMPTY_INITIALIZER;
     bool start = true;
+    const struct ly_ctx *ly_ctx;
+
+    ly_ctx = sr_acquire_context(sr_session_get_connection(session));
 
     sk = nl_socket_alloc();
     if (sk == NULL) {
@@ -623,11 +632,13 @@ void interface_oper_status_provider(sr_session_ctx_t *session, struct lyd_node *
                       name);
 
         if (start) {
-            *parent = lyd_new_path(NULL, sr_get_context(sr_session_get_connection(session)),
-                                   ds_cstr(&path), oper_state, 0, 0);
+//            *parent = lyd_new_path(NULL, sr_get_context(sr_session_get_connection(session)),
+//                                   ds_cstr(&path), oper_state, 0, 0);
+
+            lyd_new_path(NULL, ly_ctx, ds_cstr(&path), oper_state, 0, parent);
             start = false;
         } else {
-            lyd_new_path(*parent, NULL, ds_cstr(&path), oper_state, 0, 0);
+            lyd_new_path(*parent, NULL, ds_cstr(&path), oper_state, 0, NULL);
         }
 
         rtnl_link_put(link);
@@ -636,6 +647,9 @@ void interface_oper_status_provider(sr_session_ctx_t *session, struct lyd_node *
     ds_destroy(&path);
 
 cleanup:
+
+    sr_release_context(sr_session_get_connection(session));
+
     if (NULL != cache) {
         nl_cache_free(cache);
     }
@@ -671,7 +685,7 @@ void update_interfaces_speed(struct shash *interfaces, sr_session_ctx_t *session
     struct ds path = DS_EMPTY_INITIALIZER;
     sr_val_t val = {0};
     sr_datastore_t ds;
-    
+
     if (getifaddrs(&addrs) != 0) {
         log_error("Get interface addresses failed");
         return;
@@ -695,7 +709,7 @@ void update_interfaces_speed(struct shash *interfaces, sr_session_ctx_t *session
         }
 
         ds_clear(&path);
-        ds_put_format(&path, 
+        ds_put_format(&path,
                       "/ietf-interfaces:interfaces/interface[name='%s']/speed",
                       addr->ifa_name);
         val.xpath = ds_cstr(&path);
@@ -706,7 +720,7 @@ void update_interfaces_speed(struct shash *interfaces, sr_session_ctx_t *session
             log_error("Set %s=%s failed: %s", ds_cstr(&path), speed_bps, sr_strerror(rc));
         }
 
-        rc = sr_apply_changes(session, 0, 0);
+        rc = sr_apply_changes(session, 0);
         if (rc != SR_ERR_OK) {
             log_error("Set interface's speed apply failed: %s", sr_strerror(rc));
             sr_discard_changes(session);
